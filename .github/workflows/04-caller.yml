@@ -1,0 +1,19 @@
+name: 04 Caller (uses the reusable workflow)
+
+# Calls the reusable workflow above with `uses: ./.github/workflows/03-reusable.yml`
+# and then consumes its output in a normal job via `needs`.
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  call:
+    uses: ./.github/workflows/03-reusable.yml
+    with:
+      name: Khaled
+
+  use-output:
+    needs: call
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Reusable workflow returned -> ${{ needs.call.outputs.greeting }}"

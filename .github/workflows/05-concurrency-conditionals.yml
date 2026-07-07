@@ -1,0 +1,44 @@
+name: 05 Concurrency and conditionals
+
+# Concurrency: a new run in the same group cancels the in-progress one — the fix
+# for your crafthost autosave pushing every 2 min and piling up runs.
+# Conditionals: if: with status functions success()/failure()/always(), plus a
+# job that reads another job's output to decide whether to run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  decide:
+    runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.gate.outputs.deploy }}
+    steps:
+      - id: gate
+        # Only "deploy" on the default branch — a common real gate.
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    needs: decide
+    if: needs.decide.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Deploying (default branch only)"
+
+  always-report:
+    needs: [decide, deploy]
+    if: always()          # runs even if 'deploy' was skipped or failed
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "decide  = ${{ needs.decide.result }}"
+          echo "deploy  = ${{ needs.deploy.result }}"

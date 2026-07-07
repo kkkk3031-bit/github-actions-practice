@@ -1,0 +1,24 @@
+name: 01 Matrix builds
+
+# Runs the SAME job across several Node versions in parallel — the exam's
+# "strategy.matrix" topic. fail-fast:false so one version failing doesn't cancel
+# the others.
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [18, 20, 22]
+    name: Node ${{ matrix.node }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Show version
+        run: node -e "console.log('running on Node', process.version)"

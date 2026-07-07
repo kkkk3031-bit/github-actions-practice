@@ -1,0 +1,45 @@
+name: 02 Cache and artifacts
+
+# Two exam topics in one:
+#  - actions/cache: restore/save a directory keyed by a hash (speeds repeat runs)
+#  - upload/download-artifact: pass files BETWEEN jobs (each job is a fresh runner)
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache a build dir
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: demo-${{ runner.os }}-${{ hashFiles('README.md') }}
+          restore-keys: |
+            demo-${{ runner.os }}-
+
+      - name: Produce a build output
+        run: |
+          mkdir -p .cache dist
+          date > dist/build-info.txt
+          echo "built on ${{ runner.os }}" >> dist/build-info.txt
+
+      - name: Upload the build as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  consume:
+    needs: build          # runs only after build succeeds
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the artifact from the build job
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+      - name: Prove it crossed the job boundary
+        run: cat build-info.txt

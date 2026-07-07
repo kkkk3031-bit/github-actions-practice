@@ -1,0 +1,27 @@
+name: 03 Reusable workflow (called)
+
+# A REUSABLE workflow: triggered by `workflow_call`, takes typed inputs and
+# returns an output. It is NOT run directly — another workflow calls it with
+# `uses:` at the JOB level. Contrast with a composite action (bundled steps
+# called as a single step). This is the pattern the Skills exercise checkers use.
+on:
+  workflow_call:
+    inputs:
+      name:
+        description: Who to greet
+        required: true
+        type: string
+    outputs:
+      greeting:
+        description: The greeting produced
+        value: ${{ jobs.greet.outputs.greeting }}
+
+jobs:
+  greet:
+    runs-on: ubuntu-latest
+    outputs:
+      greeting: ${{ steps.mk.outputs.greeting }}
+    steps:
+      - id: mk
+        run: echo "greeting=Hello, ${{ inputs.name }}!" >> "$GITHUB_OUTPUT"
+      - run: echo "${{ steps.mk.outputs.greeting }}"
